@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Skin Cancer AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/dashboard">🔬 Skin Cancer AI</a>
+  <div class="navbar-links">
+    <span style="color:var(--muted);font-size:.85rem;align-self:center;">👤 {{ session['user'] }}</span>
+    <a href="/predict"  class="btn btn-primary" id="btn-nav-predict">+ Analyser</a>
+    <a href="/patients" class="btn btn-outline"  id="btn-nav-patients">📋 Patients</a>
+    <a href="/logout"   class="btn btn-danger"   id="btn-logout">Déconnexion</a>
+  </div>
+</nav>
+
+<div class="container-wide" style="padding-top:1rem;padding-bottom:0;">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<div class="container-wide">
+  <h1 style="margin-top:1.5rem;">Tableau de bord</h1>
+  <p style="color:var(--muted);margin-bottom:2rem;">
+    Bienvenue, <strong style="color:var(--text)">{{ session['user'] }}</strong>. 
+    Que souhaitez-vous faire ?
+  </p>
+
+  <div class="action-grid">
+    <a href="/predict" class="action-card" id="card-predict">
+      <span class="icon">🩺</span>
+      <h3>Nouvelle analyse</h3>
+      <p>Soumettre une image de lésion cutanée pour obtenir un diagnostic IA.</p>
+    </a>
+
+    <a href="/patients" class="action-card" id="card-patients">
+      <span class="icon">📋</span>
+      <h3>Patients</h3>
+      <p>Consulter l'historique de tous les diagnostics enregistrés.</p>
+    </a>
+
+    <a href="/logout" class="action-card" id="card-logout" style="border-color:rgba(239,68,68,.3);">
+      <span class="icon">🚪</span>
+      <h3>Déconnexion</h3>
+      <p>Terminer la session en cours de manière sécurisée.</p>
+    </a>
+  </div>
+
+  <div class="card mt-4" style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center;">
+    <div>
+      <div style="font-size:2rem;font-weight:700;color:var(--primary);">VGG16</div>
+      <div style="color:var(--muted);font-size:.85rem;">Modèle Deep Learning</div>
+    </div>
+    <div>
+      <div style="font-size:2rem;font-weight:700;color:var(--info);">224×224</div>
+      <div style="color:var(--muted);font-size:.85rem;">Résolution d'entrée</div>
+    </div>
+    <div>
+      <div style="font-size:2rem;font-weight:700;color:var(--success);">2</div>
+      <div style="color:var(--muted);font-size:.85rem;">Classes : Bénin / Malin</div>
+    </div>
+    <div>
+      <div style="font-size:2rem;font-weight:700;color:var(--warning);" id="counter-total">{{ total }}</div>
+      <div style="color:var(--muted);font-size:.85rem;">Patients analysés</div>
+    </div>
+    <div style="flex:1;text-align:right;">
+      <p style="color:var(--muted);font-size:.8rem;max-width:260px;margin-left:auto;">
+        Résultat à titre indicatif — consultez toujours un médecin spécialisé.
+      </p>
+    </div>
+  </div>
+
+  {% if recents %}
+  <div class="card mt-4">
+    <h3 style="margin-bottom:1rem;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">
+      🕐 Dernières analyses
+    </h3>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="text-align:left;padding:.5rem .75rem;color:var(--muted);font-weight:500;">Patient</th>
+          <th style="text-align:left;padding:.5rem .75rem;color:var(--muted);font-weight:500;">Âge</th>
+          <th style="text-align:left;padding:.5rem .75rem;color:var(--muted);font-weight:500;">Diagnostic</th>
+          <th style="text-align:left;padding:.5rem .75rem;color:var(--muted);font-weight:500;">Confiance</th>
+          <th style="text-align:left;padding:.5rem .75rem;color:var(--muted);font-weight:500;">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recents %}
+        <tr style="border-bottom:1px solid var(--border);transition:background .2s;" 
+            onmouseover="this.style.background='rgba(255,255,255,.03)'"
+            onmouseout="this.style.background='transparent'">
+          <td style="padding:.6rem .75rem;font-weight:500;">{{ p.name }}</td>
+          <td style="padding:.6rem .75rem;color:var(--muted);">{{ p.age }} ans</td>
+          <td style="padding:.6rem .75rem;">
+            {% if p.result == 'Malin' %}
+              <span style="color:#ef4444;font-weight:600;">⚠️ Malin</span>
+            {% else %}
+              <span style="color:#22c55e;font-weight:600;">✅ Bénin</span>
+            {% endif %}
+          </td>
+          <td style="padding:.6rem .75rem;color:var(--muted);">{{ "%.1f"|format(p.probability * 100) }} %</td>
+          <td style="padding:.6rem .75rem;color:var(--muted);font-size:.82rem;">
+            {{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="text-align:right;margin-top:.75rem;">
+      <a href="/patients" style="color:var(--primary);font-size:.85rem;">Voir tous les patients →</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>

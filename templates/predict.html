@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analyse Patient — Skin Cancer AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/dashboard">🔬 Skin Cancer AI</a>
+  <div class="navbar-links">
+    <a href="/patients" class="btn btn-outline" id="btn-nav-patients">📋 Patients</a>
+    <a href="/logout"   class="btn btn-danger"  id="btn-nav-logout">Déconnexion</a>
+  </div>
+</nav>
+
+<div class="container-wide" style="max-width:640px;">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}" style="margin-top:1rem;">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <h1 style="margin-top:2rem;">🩺 Analyse patient</h1>
+  <p style="color:var(--muted);margin-bottom:2rem;">
+    Remplissez les informations du patient et téléchargez une image de la lésion cutanée.
+  </p>
+
+  <div class="card">
+    <form method="POST" enctype="multipart/form-data" id="predict-form">
+
+      <div class="form-group">
+        <label for="name">Nom complet du patient</label>
+        <input class="form-control" type="text" id="name" name="name"
+               placeholder="Ex : Ahmed Benali" required/>
+      </div>
+
+      <div class="form-group">
+        <label for="age">Âge</label>
+        <input class="form-control" type="number" id="age" name="age"
+               placeholder="Ex : 45" min="1" max="120" required/>
+      </div>
+
+      <div class="form-group">
+        <label>Image de la lésion</label>
+        <div class="upload-area" id="upload-area">
+          <span style="font-size:2.5rem;">📁</span>
+          <p style="margin:.5rem 0 0;">Cliquez pour sélectionner une image</p>
+          <p style="font-size:.78rem;color:var(--muted);">PNG, JPG, JPEG acceptés</p>
+          <input type="file" id="image" name="image" accept="image/*" required/>
+        </div>
+        <img id="preview-img" alt="Aperçu de l'image sélectionnée"/>
+      </div>
+
+      <button type="submit" class="btn btn-success btn-full mt-3" id="btn-analyser">
+        🔍 Analyser
+      </button>
+
+    </form>
+  </div>
+
+  <div class="text-center mt-3">
+    <a href="/dashboard" class="btn btn-outline" id="btn-retour-dash">← Retour au tableau de bord</a>
+  </div>
+
+</div>
+
+<script>
+  const input   = document.getElementById('image');
+  const preview = document.getElementById('preview-img');
+  const area    = document.getElementById('upload-area');
+
+  input.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src   = e.target.result;
+        preview.style.display = 'block';
+        area.style.borderColor = 'var(--primary)';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.getElementById('predict-form').addEventListener('submit', function () {
+    const btn = document.getElementById('btn-analyser');
+    btn.textContent = '⏳ Analyse en cours…';
+    btn.disabled    = true;
+  });
+</script>
+
+</body>
+</html>
